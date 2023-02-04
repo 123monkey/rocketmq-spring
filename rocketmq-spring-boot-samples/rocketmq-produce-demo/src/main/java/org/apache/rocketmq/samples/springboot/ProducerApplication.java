@@ -184,6 +184,9 @@ public class ProducerApplication implements CommandLineRunner {
         }, 5000);
     }
 
+    /**
+     * 测试批量消息
+     */
     private void testBatchMessages() {
         List<Message> msgs = new ArrayList<Message>();
         for (int i = 0; i < 10; i++) {
@@ -196,6 +199,9 @@ public class ProducerApplication implements CommandLineRunner {
         System.out.printf("--- Batch messages send result :" + sr);
     }
 
+    /**
+     * 测试发送批量消息带顺序
+     */
     private void testSendBatchMessageOrderly() {
         for (int q = 0; q < 4; q++) {
             // send to 4 queues
