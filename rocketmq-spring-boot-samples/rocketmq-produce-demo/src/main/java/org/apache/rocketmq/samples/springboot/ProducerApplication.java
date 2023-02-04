@@ -47,6 +47,7 @@ import org.springframework.util.MimeTypeUtils;
 
 /**
  * Producer, using RocketMQTemplate sends a variety of messages
+ * 生产者，使用rocketmq模板发送多样化消息
  */
 @SpringBootApplication
 public class ProducerApplication implements CommandLineRunner {
@@ -79,9 +80,14 @@ public class ProducerApplication implements CommandLineRunner {
         SpringApplication.run(ProducerApplication.class, args);
     }
 
+    /**
+     * 执行消息发送
+     * @param args
+     * @throws Exception
+     */
     @Override
     public void run(String... args) throws Exception {
-        // Send string
+        // 发送字符串 同步
         SendResult sendResult = rocketMQTemplate.syncSend(springTopic, "Hello, World!");
         System.out.printf("syncSend1 to topic %s sendResult=%s %n", springTopic, sendResult);
 
@@ -92,15 +98,15 @@ public class ProducerApplication implements CommandLineRunner {
             new User().setUserAge((byte) 21).setUserName("Lester")).setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.APPLICATION_JSON_VALUE).build());
         System.out.printf("syncSend1 to topic %s sendResult=%s %n", userTopic, sendResult);
 
-        // Use the extRocketMQTemplate
+        // 使用扩展roketmq模板发送消息 同步
         sendResult = extRocketMQTemplate.syncSend(springTopic, MessageBuilder.withPayload("Hello, World!2222".getBytes()).build());
         System.out.printf("extRocketMQTemplate.syncSend1 to topic %s sendResult=%s %n", springTopic, sendResult);
 
-        // Send string with spring Message
+        // 使用spring message发送字符串
         sendResult = rocketMQTemplate.syncSend(springTopic, MessageBuilder.withPayload("Hello, World! I'm from spring message").build());
         System.out.printf("syncSend2 to topic %s sendResult=%s %n", springTopic, sendResult);
 
-        // Send user-defined object
+        // 发送用户定义对象发送消息 异步
         rocketMQTemplate.asyncSend(orderPaidTopic, new OrderPaidEvent("T_001", new BigDecimal("88.00")), new SendCallback() {
             @Override
             public void onSuccess(SendResult var1) {
@@ -114,59 +120,65 @@ public class ProducerApplication implements CommandLineRunner {
 
         });
 
-        // Send message with special tag
+        // 发送带特定tag的消息
         rocketMQTemplate.convertAndSend(msgExtTopic + ":tag0", "I'm from tag0");  // tag0 will not be consumer-selected
         System.out.printf("syncSend topic %s tag %s %n", msgExtTopic, "tag0");
         rocketMQTemplate.convertAndSend(msgExtTopic + ":tag1", "I'm from tag1");
         System.out.printf("syncSend topic %s tag %s %n", msgExtTopic, "tag1");
 
-        // Send a batch of strings
+        // Send a batch of strings 发送批量消息
         testBatchMessages();
 
-        // send a bath of strings orderly
+        // send a bath of strings orderly 发送批量消息带顺序
         testSendBatchMessageOrderly();
 
-        // Send transactional messages using rocketMQTemplate
+        // Send transactional messages using rocketMQTemplate 使用rocketmq模板发送事务消息
         testRocketMQTemplateTransaction();
 
-        // Send transactional messages using extRocketMQTemplate
+        // Send transactional messages using extRocketMQTemplate 使用扩展roketmq模板发送事务消息
         testExtRocketMQTemplateTransaction();
 
-        // Send request in sync mode and receive a reply of String type.
+        // Send request in sync mode and receive a reply of String type. 在同步模式下，发送请求和接收回复 字符串类型
         String replyString = rocketMQTemplate.sendAndReceive(stringRequestTopic, "request string", String.class);
         System.out.printf("send %s and receive %s %n", "request string", replyString);
 
-        // Send request in sync mode with timeout parameter and receive a reply of byte[] type.
+        // Send request in sync mode with timeout parameter and receive a reply of byte[] type. 在同步模式下，发送请求和接收响应 数组类型
         byte[] replyBytes = rocketMQTemplate.sendAndReceive(bytesRequestTopic, MessageBuilder.withPayload("request byte[]").build(), byte[].class, 3000);
         System.out.printf("send %s and receive %s %n", "request byte[]", new String(replyBytes));
 
-        // Send request in sync mode with hashKey parameter and receive a reply of User type.
+        // Send request in sync mode with hashKey parameter and receive a reply of User type. 在同步模式下，发送请求带hashkey参数和接收响应业务类型
         User requestUser = new User().setUserAge((byte) 9).setUserName("requestUserName");
         User replyUser = rocketMQTemplate.sendAndReceive(objectRequestTopic, requestUser, User.class, "order-id");
         System.out.printf("send %s and receive %s %n", requestUser, replyUser);
+
         // Send request in sync mode with timeout and delayLevel parameter parameter and receive a reply of generic type.
         ProductWithPayload<String> replyGenericObject = rocketMQTemplate.sendAndReceive(genericRequestTopic, "request generic",
             new TypeReference<ProductWithPayload<String>>() {
             }.getType(), 30000, 2);
         System.out.printf("send %s and receive %s %n", "request generic", replyGenericObject);
 
-        // Send request in async mode and receive a reply of String type.
+        // Send request in async mode and receive a reply of String type. 在异步模式下，发送请求和接收响应
         rocketMQTemplate.sendAndReceive(stringRequestTopic, "request string", new RocketMQLocalRequestCallback<String>() {
-            @Override public void onSuccess(String message) {
+            @Override
+            public void onSuccess(String message) {
                 System.out.printf("send %s and receive %s %n", "request string", message);
             }
 
-            @Override public void onException(Throwable e) {
+            @Override
+            public void onException(Throwable e) {
                 e.printStackTrace();
             }
         });
-        // Send request in async mode and receive a reply of User type.
+
+        // Send request in async mode and receive a reply of User type. 在异步模式下，发送请求和接收响应业务类型
         rocketMQTemplate.sendAndReceive(objectRequestTopic, new User().setUserAge((byte) 9).setUserName("requestUserName"), new RocketMQLocalRequestCallback<User>() {
-            @Override public void onSuccess(User message) {
+            @Override
+            public void onSuccess(User message) {
                 System.out.printf("send user object and receive %s %n", message.toString());
             }
 
-            @Override public void onException(Throwable e) {
+            @Override
+            public void onException(Throwable e) {
                 e.printStackTrace();
             }
         }, 5000);
